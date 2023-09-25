@@ -248,11 +248,15 @@ class PubSubPlusBroker {
        */
       this.messageConsumer = this.broker.session.createMessageConsumer({
         // solace.MessageConsumerProperties
-
+        queueDescriptor: {
+          name: this.sReceiveQueue,
+          type: solace.QueueType.QUEUE
+        },
         //enable auto-acknowledgement so that messages are read off the queue immediately
+        // acknowledgeMode: solace.messageConsumerAcknowledgeMode.AUTO,
       });
       try {
-        
+        this.messageConsumer.connect()
       } catch (error) {
         console.error("Could not connect to queue. ->" + error.message);
       }
