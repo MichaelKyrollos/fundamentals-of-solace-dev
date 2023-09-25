@@ -1,6 +1,5 @@
 package com.solace.chat.application.web.server;
 
-
 import com.google.gson.Gson;
 import com.solace.chat.application.common.*;
 import org.apache.tomcat.util.codec.binary.Base64;
@@ -45,16 +44,20 @@ public class SolaceCloudProxy {
     //Setting up the header for the Solace Request
     @PostConstruct
     public void init() {
-        httpHeaders = new HttpHeaders() {{
-            String auth = solaceUsername + ":" + solacePassword;
-            byte[] encodedAuth = Base64.encodeBase64(
-                    auth.getBytes(Charset.forName("US-ASCII")));
-            String authHeader = "Basic " + new String(encodedAuth);
-            set("Authorization", authHeader);
-            
-            //This header determines that the Http Request needs a response
-            set("Content-Type","application/json");
-        }};
+        httpHeaders = new HttpHeaders() {
+            {
+                String auth = solaceUsername + ":" + solacePassword;
+                byte[] encodedAuth = Base64.encodeBase64(
+                        auth.getBytes(Charset.forName("US-ASCII")));
+                String authHeader = "Basic " + new String(encodedAuth);
+                set("Authorization", authHeader);
+
+                //This header determines that the Http Request needs a response
+                set("Content-Type", "application/json");
+                set("Solace-Reply-Wait-Time-In-ms", "3000");
+
+            }
+        };
     }
 
     //Function that makes a REST-ful call to Solace
@@ -63,9 +66,16 @@ public class SolaceCloudProxy {
     public ResponseEntity ProxyLoginRequestToSolace(@RequestBody UserObject userObject) {
         RestTemplate restTemplate = new RestTemplate();
         HttpEntity<UserObject> request = new HttpEntity<UserObject>(userObject, httpHeaders);
-         //Pass through a response code based on the result of the REST-ful request
-        restTemplate.postForObject(solaceRESTHost + "/LOGIN/MESSAGE/REQUEST", request, String.class);
-        return new ResponseEntity(HttpStatus.OK);
-       
+        //Pass through a response code based on the result of the REST-ful request
+        AuthenticatedObject authenticatedObject = restTemplate.postForObject(solaceRESTHost + "/LOGIN/MESSAGE/REQUEST",
+                request, AuthenticatedObject.class);
+        if (authenticatedObject.isAuthenticated()) {
+            return new ResponseEntity(HttpStatus.OK);
+        } else {
+            return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+
+        // restTemplate.postForObject(solaceRESTHost + "/LOGIN/MESSAGE/REQUEST", request, String.class);
+        // return new ResponseEntity(HttpStatus.OK);
     }
 }

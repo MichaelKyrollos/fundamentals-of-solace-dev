@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.solace.chat.application.common.*;
 import javax.annotation.PostConstruct;
 
-
 /**
  * The LoginMessageReplier class is responsible for receiving a Login message and validating whether
  * the credentials match against an internal repository
@@ -82,13 +81,14 @@ public class LoginMessageReplier {
             JCSMPChannelProperties cp = (JCSMPChannelProperties) properties
                     .getProperty(JCSMPProperties.CLIENT_CHANNEL_PROPERTIES);
 
-
             session = JCSMPFactory.onlyInstance().createSession(properties);
             session.connect();
             consumer = session.getMessageConsumer(new LoginRequestHandler());
             producer = session.getMessageProducer(new PrintingPubCallback());
             consumer.start();
             //Add the session subscription here
+            session.addSubscription(JCSMPFactory.onlyInstance().createTopic(REQUEST_TOPIC), true);
+
         } catch (InvalidPropertiesException ipe) {
             System.err.println("Error during session creation: ");
             ipe.printStackTrace();
@@ -106,7 +106,23 @@ public class LoginMessageReplier {
     class LoginRequestHandler implements XMLMessageListener {
 
         private XMLMessage createReplyMessage(TextMessage request) throws JCSMPException {
-        
+            TextMessage replyMessage = JCSMPFactory.onlyInstance().createMessage(TextMessage.class);
+            UserObject userObject = gson.fromJson(request.getText(), UserObject.class);
+
+            //Validate the user
+            boolean validUser = credentialsRepository.isValidUser(userObject.getUsername(), userObject.getPassword());
+            if (validUser)
+                System.out.println("Successfully validated a user");
+            else
+                System.out.println("Authentication failed");
+            AuthenticatedObject authenticatedObject = new AuthenticatedObject();
+            authenticatedObject.setAuthenticated(validUser);
+            replyMessage.setHTTPContentType("application/json");
+            replyMessage.setText(gson.toJson(authenticatedObject));
+            replyMessage.setApplicationMessageId(request.getApplicationMessageId());
+            replyMessage.setDeliverToOne(true);
+            replyMessage.setDeliveryMode(DeliveryMode.DIRECT);
+            return replyMessage;
         }
 
         //Reply to a request
