@@ -60,11 +60,13 @@ public class SolaceCloudProxy {
     @RequestMapping(value = "/solace/cloud/proxy", method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity SendLoginRequetOverSolace(@RequestBody UserObject userObject) {
+        //UPDATED HERE 
         //Rest Request goes here
         // makes HTTP REST calls and aids interaction with HTTP servers 
         RestTemplate restTemplate = new RestTemplate();
         //solace-chat-common has the reference to it.
         HttpEntity<UserObject> request = new HttpEntity<UserObject>(userObject, httpHeaders);
+        //here is post request 
         restTemplate.postForObject(solaceRESTHost + "/LOGIN/MESSAGE/REQUEST", request, String.class);
         return new ResponseEntity(HttpStatus.OK);
     }
