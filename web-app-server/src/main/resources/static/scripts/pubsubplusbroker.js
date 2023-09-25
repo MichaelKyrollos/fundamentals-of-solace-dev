@@ -242,6 +242,7 @@ class PubSubPlusBroker {
       oResultCallback(false, "No session! You're probably not connected to the broker.");
     } else {
 
+      //UPDATED HERE
       /*This block establishes our consumer.
        *We defer actually recieving the message to the event
        *handler designated for that purpose.
