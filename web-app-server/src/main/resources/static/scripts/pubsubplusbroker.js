@@ -146,6 +146,8 @@ class PubSubPlusBroker {
       /*We create a message object, provide it with a destination, and
        *establish the delivery mode. After this, we assign our text message (the "body")
        *to said object*/
+
+       //UPDATE HERE
        var message = solace.SolclientFactory.createMessage();
        message.setDestination(solace.SolclientFactory.createTopicDestination(this.sPublishTopic));
        message.setDeliveryMode(solace.MessageDeliveryModeType.DIRECT);
